@@ -11,78 +11,66 @@ DISCONECT_MSG = "|disconnect"
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
-arduinos = []
-pythonClients = []
+clients = []
 connTarget = []
 stdSize = 10
 
 def handleClient(conn, addr):
+    clients.append([conn, addr])
     print(f"New connection: {addr}")
 
     connected = True
     while connected:
-        clientTypeLength = conn.recv(HEADER)
-        clientTypeLength = clientTypeLength.decode(FORMAT)
-        print(clientTypeLength)
-        if clientTypeLength:
-            clientType = conn.recv(int(clientTypeLength)).decode(FORMAT)
-            #chek the client type
-            if clientType:
-                if clientType == "arduino":
-                    arduinos.append([conn, addr])
-                elif clientType == "python":
-                    print("python client")
-                    target = conn.recv(HEADER)
-                    target = target.decode(FORMAT)
-                    print(target)
-                    if target.find("|no target|") == -1:
-                        print("fuck")
-                        targetsFound = 0
-                        for i in range(0, len(arduinos)):
-                            if target == str(arduinos[i][2]):
-                                messageLength = conn.recv(HEADER).decode(FORMAT)
-                                message = conn.recv(int(messageLength)).decode(FORMAT)
-                                if message == "conecting":
-                                    connTarget.append([addr, target[i][2]])
-                                    response = f"|connected to {str(target[i][2])}|"
-                                    response = response.encode(FORMAT)
-                                    responseLength = len(response)
-                                    responseLength = str(responseLength).encode(FORMAT)
-                                    responseLength += b' ' * (HEADER - len(responseLength))
-                                    conn.send(responseLength)
-                                    conn.send(response)
-                                else:
-                                    print(message)
-                                targetsFound += 1
-                            elif i == len(arduinos) and target == str(arduinos[i][2]) and targetsFound == 0:
-                                response = "|target not found|"
-                                response = response.encode(FORMAT)
-                                responseLength = len(response)
-                                responseLength = str(messageLength).encode(FORMAT)
-                                responseLength = b' ' * (HEADER - len(messageLength))
-                                conn.send(responseLength)
-                                conn.send(response)
+        target = conn.recv(HEADER)
+        target = target.decode(FORMAT)
+        if target.find("|no target|") == -1:
+            targetsFound = 0
+            for i in range(0, len(clients)):
+                if target == str(clients[i][2]):
+                    messageLength = conn.recv(HEADER).decode(FORMAT)
+                    message = conn.recv(int(messageLength)).decode(FORMAT)
+                    if message == "conecting":
+                        connTarget.append([addr, target[i][2]])
+                        response = f"|connected to {str(target[i][2])}|"
+                        response = response.encode(FORMAT)
+                        responseLength = len(response)
+                        responseLength = str(responseLength).encode(FORMAT)
+                        responseLength += b' ' * (HEADER - len(responseLength))
+                        conn.send(responseLength)
+                        conn.send(response)
                     else:
-                        print(True)
-                        pythonClients.append([conn, addr])
-                        connectionsMessage = ""
-                        if len(arduinos) > 0:
-                            for i in range(0, len(arduinos)):
-                                connectionsMessage += str(arduinos[i][1]) + ","
-                            connectionsMessage = connectionsMessage.encode(FORMAT)
-                            connectionsLength = len(connectionsMessage)
-                            connectionsLength = str(connectionsLength).encode(FORMAT)
-                            connectionsLength += b' ' * (HEADER - len(connectionsLength))
-                        else:
-                            connectionsMessage = "|no arduinos|"
-                            connectionsMessage = connectionsMessage.encode(FORMAT)
-                            connectionsLength = len(connectionsMessage)
-                            connectionsLength = str(connectionsLength).encode(FORMAT)
-                            connectionsLength += b' ' * (HEADER - len(connectionsLength))
-                        print(connectionsLength)
-                        conn.send(connectionsLength)
-                        conn.send(connectionsMessage)
-            else:
+                        print(message)
+                        #|Main sending to other client logic|
+                    targetsFound += 1
+                elif i == len(clients) and target == str(clients[i][2]) and targetsFound == 0:
+                    response = "|target not found|"
+                    response = response.encode(FORMAT)
+                    responseLength = len(response)
+                    responseLength = str(messageLength).encode(FORMAT)
+                    responseLength = b' ' * (HEADER - len(messageLength))
+                    conn.send(responseLength)
+                    conn.send(response)
+        else:
+            ClientState = conn.recv(HEADER).decode(FORMAT)
+            if ClientState == "|get clients|":
+                connectionsMessage = ""
+                if len(clients) > 0:
+                    for i in range(0, len(clients)):
+                        connectionsMessage += str(clients[i][1]) + ","
+                    connectionsMessage = connectionsMessage.encode(FORMAT)
+                    connectionsLength = len(connectionsMessage)
+                    connectionsLength = str(connectionsLength).encode(FORMAT)
+                    connectionsLength += b' ' * (HEADER - len(connectionsLength))
+                else:
+                    connectionsMessage = "|no clients|"
+                    connectionsMessage = connectionsMessage.encode(FORMAT)
+                    connectionsLength = len(connectionsMessage)
+                    connectionsLength = str(connectionsLength).encode(FORMAT)
+                    connectionsLength += b' ' * (HEADER - len(connectionsLength))
+                print(connectionsLength)
+                conn.send(connectionsLength)
+                conn.send(connectionsMessage)
+            elif ClientState == "|disconnect|":
                 connected = False
     conn.close() 
 def start():
