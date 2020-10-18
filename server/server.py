@@ -26,7 +26,7 @@ def handleClient(conn, addr):
         if target.find("|no target|") == -1:
             targetsFound = 0
             for i in range(0, len(clients)):
-                if target == str(clients[i][2]):
+                if target == str(clients[i][1]):
                     messageLength = conn.recv(HEADER).decode(FORMAT)
                     message = conn.recv(int(messageLength)).decode(FORMAT)
                     if message == "conecting":
@@ -41,6 +41,24 @@ def handleClient(conn, addr):
                     else:
                         print(message)
                         #|Main sending to other client logic|
+                        messageLength = messageLength.encode(FORMAT)
+                        message = message.encode(FORMAT)
+                        
+                        try:
+                            target[i][0].send(messageLength)
+                            target[i][0].send(message)
+
+                            response = "message succesfully sent"
+                            response = response.encode(FORMAT)
+                            responseLength = len(response)
+                            responseLength = str(response).encode(FORMAT)
+                            responseLength = b' ' * (HEADER - len(responseLength))
+                        except Exception:
+                            response = f"an error has ocurred |{str(Exception)}|"
+                            response = response.encode(FORMAT)
+                            responseLength = len(response)
+                            responseLength = str(response).encode(FORMAT)
+                            responseLength = b' ' * (HEADER - len(responseLength))
                     targetsFound += 1
                 elif i == len(clients) and target == str(clients[i][2]) and targetsFound == 0:
                     response = "|target not found|"
