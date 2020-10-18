@@ -58,7 +58,7 @@ def handleClient(conn, addr):
                             response = response.encode(FORMAT)
                             responseLength = len(response)
                             responseLength = str(response).encode(FORMAT)
-                            responseLength = b' ' * (HEADER - len(responseLength))
+                            responseLength += b' ' * (HEADER - len(responseLength))
                     targetsFound += 1
                 elif i == len(clients) and target == str(clients[i][2]) and targetsFound == 0:
                     response = "|target not found|"
