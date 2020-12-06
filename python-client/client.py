@@ -14,13 +14,7 @@ class Client:
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
         self.client.connect(self.ADDR)
-    def connect(self):
-        clientTypemsg = self.clientType.encode(self.FORMAT)
-        clientTypemsgLength = str(len(clientTypemsg)).encode(self.FORMAT)
-        clientTypemsgLength += b' ' * (self.HEADER - len(clientTypemsgLength))
-        self.client.send(clientTypemsgLength)
-        self.client.send(clientTypemsg)
-    def getArduinosConnected(self):
+    def getRaspberryPiesConnected(self):
         clientTypemsg = self.clientType.encode(self.FORMAT)
         clientTypemsgLength = str(len(clientTypemsg)).encode(self.FORMAT)
         clientTypemsgLength += b' ' * (self.HEADER - len(clientTypemsgLength))
@@ -32,31 +26,29 @@ class Client:
         self.client.send(clientTypemsg)
         self.client.send(target)
         length = self.client.recv(self.HEADER).decode(self.FORMAT)
-        print(length)
-        arduinos = self.client.recv(int(length)).decode(self.FORMAT)
-        arduinos = arduinos.split(",")
-        #del arduinos[len(arduinos) - 1]
+        raspberrypies = self.client.recv(int(length)).decode(self.FORMAT)
+        raspberrypies = raspberrypies.split(",")
 
-        return arduinos
-    def sendDataToArduino(self, target, data):
+        return raspberrypies
+    def sendDataToRaspberryPi(self, target, data):
         clientTypemsg = self.clientType.encode(self.FORMAT)
         clientTypemsgLength = str(len(clientTypemsg)).encode(self.FORMAT)
         clientTypemsgLength += b' ' * (self.HEADER - len(clientTypemsgLength))
         target = str(target)
+        print("target:" + str(target))
         target = target.encode(self.FORMAT)
-        targetLength = len(target)
-        targetLength = str(targetLength).encode(self.FORMAT)
-        targetLength = b'' * (self.HEADER - len(targetLength))
+        target += b' ' * (self.HEADER - len(target))
         data = str(data).encode()
         dataLength = str(len(data)).encode(self.FORMAT)
+        dataLength += b' ' * (self.HEADER - len(dataLength))
 
         self.client.send(clientTypemsgLength)
         self.client.send(clientTypemsg)
-        self.client.send(targetLength)
         self.client.send(target)
         self.client.send(dataLength)
         self.client.send(data)
 
-        length = self.client.recv(self.HEADER)
-        response = self.client.recv(int(length))
+        length = self.client.recv(self.HEADER).decode(self.FORMAT)
+        response = self.client.recv(int(length)).decode(self.FORMAT)
+        
         return response
